@@ -12,10 +12,11 @@ const Tasks = () => {
     const [taskStatuses, setTaskStatuses] = useState({});
     const [intervals, setIntervals] = useState({});
 
-    const formatDuration = (durationInMinutes) => {
-        const days = Math.floor(durationInMinutes / 1440);
-        const hours = Math.floor((durationInMinutes % 1440) / 60);
-        const minutes = durationInMinutes % 60;
+    const formatDuration = (durationInSeconds) => {
+        const days = Math.floor(durationInSeconds / 86400);
+        const hours = Math.floor((durationInSeconds % 86400) / 3600);
+        const minutes = Math.floor((durationInSeconds % 3600) / 60);
+        const seconds = durationInSeconds % 60;
         let formattedDuration = '';
         if (days > 0) {
             formattedDuration += `${days} jours `;
@@ -24,7 +25,10 @@ const Tasks = () => {
             formattedDuration += `${hours} heures `;
         }
         if (minutes > 0) {
-            formattedDuration += `${minutes} minutes`;
+            formattedDuration += `${minutes} minutes `;
+        }
+        if (seconds > 0) {
+            formattedDuration += `${seconds} secondes`;
         }
         return formattedDuration.trim();
     };
@@ -49,11 +53,20 @@ const Tasks = () => {
                         elapsedTime: prevStatuses[taskId].elapsedTime + 1,
                     },
                 }));
-            }, 60000); // 60000 ms = 1 minute
+                localStorage.setItem(`elapsedTime-${taskId}`, taskStatuses[taskId].elapsedTime.toString());
+            }, 1000); // 1000 ms = 1 seconde
 
             setIntervals((prevIntervals) => ({
                 ...prevIntervals,
                 [taskId]: intervalId,
+            }));
+
+            setTaskStatuses((prevStatuses) => ({
+                ...prevStatuses,
+                [taskId]: {
+                    ...prevStatuses[taskId],
+                    isPaused: false,
+                },
             }));
         } else {
             clearInterval(intervals[taskId]);
@@ -65,15 +78,15 @@ const Tasks = () => {
                 delete newIntervals[taskId];
                 return newIntervals;
             });
-        }
 
-        setTaskStatuses({
-            ...taskStatuses,
-            [taskId]: {
-                ...taskStatuses[taskId],
-                isPaused: !taskStatuses[taskId]?.isPaused,
-            },
-        });
+            setTaskStatuses((prevStatuses) => ({
+                ...prevStatuses,
+                [taskId]: {
+                    ...prevStatuses[taskId],
+                    isPaused: true,
+                },
+            }));
+        }
     };
 
     const activeTasks = tasks.filter((task) => !task.archived);
@@ -101,18 +114,19 @@ const Tasks = () => {
                     return [];
                 }
             })
-            .then((response) => {
-                const updatedTasks = response.map((task) => {
-                    const elapsedTime = parseInt(localStorage.getItem(`elapsedTime-${task.id}`) || '0', 10);
-                    return {
-                        ...task,
-                        elapsedTime,
-                    };
-                });
+            .then((response) => {            const updatedTasks = response.map((task) => {
+                const elapsedTime = parseInt(localStorage.getItem(`elapsedTime-${task.id}`) || '0', 10);
+                return {
+                    ...task,
+                    elapsedTime,
+                };
+            });
                 setTasks(updatedTasks);
             })
             .catch((error) => console.error('Erreur2 lors de la récupération des tags:', error));
     }, [tasks, taskStatuses]);
+
+
     return (
         <div className="mt-4">
             {activeTasks.length === 0 ? (
