@@ -17,17 +17,17 @@ const Home = () => {
     return (
         <>
             <div className="home bg-dark text-center">
-                <div className="button-add mb-5">
+                <div className="button-add mb-3">
                     <a href="/">
                         <BiPlusCircle size={50} color="#4EBC3B" />
                     </a>
                 </div>
-                <div className="card shadow">
+                <div className="card shadow p-0">
                     <div className="card-body">
                         <h5 className="card-title">{formattedDate}</h5>
                         <div className="card-tags mt-5">
                             <div className="tag row">
-                                <div className="tags-affiche col-10">
+                                <div className="tags-affiche col-10 text-left">
                                     <a href=""><Tags /></a>
                                 </div>
                                 <div className="tag-add col-2">
@@ -40,9 +40,11 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
-                <a href="/">
-                    <img src={archivesImg} alt="Voir les archives" title="Archives" height="60" className="mt-5 float-start"/>
-                </a>
+                <div className="m-4">
+                    <a href="/">
+                        <img src={archivesImg} alt="Voir les archives" title="Archives" height="60" className="mt-5 float-start"/>
+                    </a>
+                </div>
             </div>
         </>
     );
