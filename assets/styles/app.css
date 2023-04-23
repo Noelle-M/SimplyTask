@@ -51,4 +51,17 @@ a{
 
 td{
     font-size: 15px;
+    padding: 10px;
+}
+
+.td-right{
+    text-align:right;
+}
+
+.td-left{
+    text-align:left !important;
+}
+
+td, tr{
+    border:none !important
 }

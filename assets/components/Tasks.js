@@ -4,11 +4,14 @@ import etoile from '../img/etoile-pleine.png';
 import archiver from '../img/archiver.png';
 import play from '../img/play.png';
 import pause from '../img/pause.png';
+import horloge from '../img/horloge.png';
+import sablier from '../img/sablier.png';
 
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
-    const [progress, setProgress] = useState(new Map());
     const [taskStatuses, setTaskStatuses] = useState({});
+    const [intervals, setIntervals] = useState({});
+
     const formatDuration = (durationInMinutes) => {
         const days = Math.floor(durationInMinutes / 1440);
         const hours = Math.floor((durationInMinutes % 1440) / 60);
@@ -25,7 +28,45 @@ const Tasks = () => {
         }
         return formattedDuration.trim();
     };
+
     const handlePause = (taskId) => {
+        if (!taskStatuses[taskId]) {
+            setTaskStatuses({
+                ...taskStatuses,
+                [taskId]: {
+                    elapsedTime: parseInt(localStorage.getItem(`elapsedTime-${taskId}`) || '0', 10),
+                    isPaused: true,
+                },
+            });
+        }
+
+        if (taskStatuses[taskId]?.isPaused) {
+            const intervalId = setInterval(() => {
+                setTaskStatuses((prevStatuses) => ({
+                    ...prevStatuses,
+                    [taskId]: {
+                        ...prevStatuses[taskId],
+                        elapsedTime: prevStatuses[taskId].elapsedTime + 1,
+                    },
+                }));
+            }, 60000); // 60000 ms = 1 minute
+
+            setIntervals((prevIntervals) => ({
+                ...prevIntervals,
+                [taskId]: intervalId,
+            }));
+        } else {
+            clearInterval(intervals[taskId]);
+
+            localStorage.setItem(`elapsedTime-${taskId}`, taskStatuses[taskId].elapsedTime.toString());
+
+            setIntervals((prevIntervals) => {
+                const newIntervals = { ...prevIntervals };
+                delete newIntervals[taskId];
+                return newIntervals;
+            });
+        }
+
         setTaskStatuses({
             ...taskStatuses,
             [taskId]: {
@@ -34,10 +75,9 @@ const Tasks = () => {
             },
         });
     };
+
     const activeTasks = tasks.filter((task) => !task.archived);
-    const calculateWidth = (elapsedTime, totalTime) => {
-        return (elapsedTime / totalTime) * 100;
-    };
+
     const calculatePercentage = (duration, totalDuration, elapsed) => {
         if (elapsed) {
             duration = Math.min(elapsed, duration);
@@ -61,12 +101,20 @@ const Tasks = () => {
                     return [];
                 }
             })
-            .then((response) => setTasks(response))
+            .then((response) => {
+                const updatedTasks = response.map((task) => {
+                    const elapsedTime = parseInt(localStorage.getItem(`elapsedTime-${task.id}`) || '0', 10);
+                    return {
+                        ...task,
+                        elapsedTime,
+                    };
+                });
+                setTasks(updatedTasks);
+            })
             .catch((error) => console.error('Erreur2 lors de la récupération des tags:', error));
     }, [tasks, taskStatuses]);
-
     return (
-        <div>
+        <div className="mt-4">
             {activeTasks.length === 0 ? (
                 <>
                     <p className="text-center">Vous n'avez aucune tâche en cours.</p>
@@ -75,32 +123,33 @@ const Tasks = () => {
             ) : (
                 <>
                     {activeTasks.map((task) => (
-                        <div className="card-task-one border shadow-sm" key={task.id}>
-                            <table className="table table-hover">
+                        <div className="card-task-one border shadow-sm mt-4" key={task.id}>
+                            <table className="table">
                                 <tbody>
-                                <tr>
-                                    <td>
+                                <tr className="card-header">
+                                    <td className="td-left">
                                         {task.tags.map((tag) => (
-                                            <div
+                                            <span
                                                 className="color-tag"
                                                 key={tag.id}
                                                 style={{ backgroundColor: tag.color }}
-                                            ></div>
+                                            ></span>
                                         ))}
-                                    </td>
-                                    <td>
                                         {task.title}
                                     </td>
-                                    <td>
+                                    <td></td>
+                                    <td className="td-right">
                                         <img src={archiver} alt="archiver" title="Archiver cette tâche" height="30"/>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>
+                                        <img src={horloge} alt="temps estimé" title="temps estimé" height="40"/>
                                         {formatDuration(task.duree)}
                                     </td>
                                     <td>
-                                        {formatDuration(task.marge_securite)}
+                                        <img src={sablier} alt="marge de sécurité" title="marge de sécurité" height="30"/>
+                                        {task.marge_securite ? formatDuration(task.marge_securite) : '0'}
                                     </td>
                                     <td>
                                         {Array.from({ length: task.priority }).map((_, i) => (
@@ -110,20 +159,21 @@ const Tasks = () => {
                                 </tr>
                                 <tr>
                                     <td colSpan="3">
-                                        <div style={{ display: 'flex', height: '40px' }}>
+                                        <div className="timeline" style={{ display: 'flex', height: '40px' }}>
                                             <div
                                                 style={{
-                                                    width: `${calculatePercentage(task.duree, task.duree + task.marge_securite, progress.get(task.id)?.elapsed)}%`,
-                                                    backgroundColor: progress.get(task.id)?.elapsed ? 'rgba(0, 128, 0, 1)' : 'rgba(0, 128, 0, 0.7)',
+                                                    width: `${calculatePercentage(task.duree, task.duree + task.marge_securite, task.elapsedTime)}%`,
+                                                    backgroundColor: 'rgba(0, 128, 0, 1)',
                                                 }}
                                             ></div>
                                             <div
                                                 style={{
-                                                    width: `${calculatePercentage(task.marge_securite, task.duree + task.marge_securite, progress.get(task.id)?.elapsed)}%`,
-                                                    backgroundColor: progress.get(task.id)?.elapsed ? 'rgba(255, 255, 0, 1)' : 'rgba(255, 255, 0, 0.7)',
+                                                    width: `${calculatePercentage(task.marge_securite, task.duree + task.marge_securite, task.elapsedTime)}%`,
+                                                    backgroundColor: 'rgba(255, 255, 0, 1)',
                                                 }}
                                             ></div>
                                         </div>
+                                        <p>Temps écoulé: {formatDuration(task.elapsedTime)}</p>
                                     </td>
                                 </tr>
                                 <tr>

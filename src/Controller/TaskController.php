@@ -22,8 +22,10 @@ class TaskController extends AbstractController
     public function getTasks(): JsonResponse
     {
         $user = $this->getUser();
-
-        $tasks = $this->entityManager->getRepository(Tasks::class)->findBy(['user' => $user]);
+        $tasks ="";
+        if(empty($tasks)){
+            $tasks = $this->entityManager->getRepository(Tasks::class)->findBy(['user' => $user]);
+        }
 
         $response = [];
         foreach ($tasks as $task) {

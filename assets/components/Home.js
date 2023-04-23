@@ -22,7 +22,7 @@ const Home = () => {
                         <BiPlusCircle size={50} color="#4EBC3B" />
                     </a>
                 </div>
-                <div className="card shadow p-0">
+                <div className="card shadow p-0 col-sm-12 col-md-12 col-lg-8 col-xl-6 col-xxl-6 mx-auto">
                     <div className="card-body">
                         <h5 className="card-title">{formattedDate}</h5>
                         <div className="card-tags mt-5">
